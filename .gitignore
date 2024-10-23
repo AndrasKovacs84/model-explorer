@@ -30,3 +30,9 @@
 *.exe
 *.out
 *.app
+
+# Editor specific folders and files
+.vs
+out
+*.user
+
