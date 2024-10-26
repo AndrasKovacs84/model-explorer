@@ -1,0 +1,37 @@
+name: Build and Test Model Explorer
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+    branches:
+      - main
+
+jobs:
+  build-linux:
+    name: Build and Test on Ubuntu
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v2
+
+    - name: Setup vcpkg
+      uses: lukka/run-vcpkg@v11
+      with:
+        vcpkgArguments: 'qt5-base qt3d assimp gtest'
+        vcpkgDirectory: '${{ github.workspace }}/vcpkg'
+        vcpkgConfigurationJson: '${{ github.workspace }}/vcpkg-configuration.json'  # Explicitly reference the config file
+
+    - name: Set up CMake
+      uses: jwlawson/actions-setup-cmake@v1
+
+    - name: Generate build files with CMake
+      run: cmake -S . -B build -DCMAKE_TOOLCHAIN_FILE=${{ github.workspace }}/vcpkg/scripts/buildsystems/vcpkg.cmake
+
+    - name: Build Model Explorer
+      run: cmake --build build
+
+    - name: Run Tests
+      run: ctest --test-dir build --output-on-failure
