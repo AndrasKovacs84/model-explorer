@@ -9,26 +9,35 @@ on:
       - main
 
 jobs:
-  build-linux:
-    name: Build and Test on Ubuntu
-    runs-on: ubuntu-latest
+  build:
+    name: Build and Test on ${{ matrix.os }}
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        os: [ubuntu-latest, windows-latest]
+        include:
+          - os: windows-latest
+            vcpkgCommitId: 'a42af01b72c28a8e1d7b48107b33e4f286a55ef6'
+          - os: ubuntu-latest
+            vcpkgCommitId: 'a42af01b72c28a8e1d7b48107b33e4f286a55ef6'
 
     steps:
     - name: Checkout repository
-      uses: actions/checkout@v2
+      uses: actions/checkout@v3
 
     - name: Setup vcpkg
       uses: lukka/run-vcpkg@v11
       with:
-        vcpkgArguments: 'qt5-base qt3d assimp gtest'
-        vcpkgDirectory: '${{ github.workspace }}/vcpkg'
-        vcpkgConfigurationJson: '${{ github.workspace }}/vcpkg-configuration.json'  # Explicitly reference the config file
+        vcpkgDirectory: '${{ runner.workspace }}/vcpkg'
+        vcpkgGitCommitId: '${{ matrix.vcpkgCommitId }}'
+        vcpkgJsonGlob: '**/vcpkg.json'
+        runVcpkgInstall: true
 
     - name: Set up CMake
       uses: jwlawson/actions-setup-cmake@v1
 
     - name: Generate build files with CMake
-      run: cmake -S . -B build -DCMAKE_TOOLCHAIN_FILE=${{ github.workspace }}/vcpkg/scripts/buildsystems/vcpkg.cmake
+      run: cmake -S . -B build -DCMAKE_TOOLCHAIN_FILE=${{ runner.workspace }}/vcpkg/scripts/buildsystems/vcpkg.cmake
 
     - name: Build Model Explorer
       run: cmake --build build
